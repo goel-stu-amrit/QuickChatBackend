@@ -5,7 +5,7 @@ const dbconfig = require('./config/dbConfig')
 
 const app = require('./app')
 
-const port = process.env.PORT_NUMBER || 6000
+const port = process.env.PORT_NUMBER || 5000
 
 
 
