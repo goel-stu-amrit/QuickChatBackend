@@ -30,6 +30,14 @@ io.on('connection', socket =>{
         .to(message.members[1])
         .emit('receive-message', message)
     })
+
+    socket.on('clear-unread-message', data=>{
+        io
+        .to(data.members[0])
+        .to(data.members[1])
+        .emit('cleared-message-count', data)
+
+    })
 })
 
 module.exports = server 
