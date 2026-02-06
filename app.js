@@ -18,6 +18,8 @@ app.use('/api/user', userRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/message', messageRouter)
 
+const onlineUsers = []
+
 //Testing socket connection with client
 io.on('connection', socket =>{
     socket.on('join-room', userId =>{
@@ -36,7 +38,20 @@ io.on('connection', socket =>{
         .to(data.members[0])
         .to(data.members[1])
         .emit('cleared-message-count', data)
+    })
 
+    socket.on('user-typing', (data)=>{
+        io
+        .to(data.members[0])
+        .to(data.members[1])
+        .emit('started-typing', data)
+    })
+
+    socket.on('user-login', userId=>{
+        if(!onlineUsers.includes(userId)){
+            onlineUsers.push(userId)
+        }
+        socket.emit('online-users', onlineUsers)
     })
 })
 
