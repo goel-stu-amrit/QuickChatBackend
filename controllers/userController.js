@@ -1,6 +1,7 @@
 const router = require('express').Router()
 const User = require('./../models/user')
 const authMiddleware = require('./../middlewares/authMiddleware')
+const cloudinary = require('./../cloudinary')
 
 
 router.get('/get-logged-user', authMiddleware , async (req, res)=>{
@@ -38,5 +39,36 @@ router.get('/get-all-users', authMiddleware , async (req, res)=>{
         })
     }
 })
+
+
+router.post('/upload-profile-pic', authMiddleware, async (req,res) =>{
+    try{
+        const image= req.body.image
+        //upload image to cloudinary
+        const uploadedImage = await cloudinary.uploader.upload(image, {
+            folder:'quick-chat'
+        })
+
+        //update user model & set profile pic property
+        const user = await User.findByIdAndUpdate(
+            {_id: req.userId},
+            {profilePic : uploadedImage.secure_url},
+            {new:true}
+        )
+
+        res.send({
+            message:"profile pic updated successfully",
+            success:true,
+            data:user
+        })
+
+    }catch(err){
+        res.send({
+            message:err.message,
+            success:false
+        })
+    }
+})
+
 
 module.exports  = router
