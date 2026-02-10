@@ -33,6 +33,11 @@ io.on('connection', socket =>{
         .to(message.members[0])
         .to(message.members[1])
         .emit('receive-message', message)
+
+        io
+        .to(message.members[0])
+        .to(message.members[1])
+        .emit('set-message-count', message)
     })
 
     socket.on('clear-unread-message', data=>{
@@ -53,7 +58,11 @@ io.on('connection', socket =>{
         if(!onlineUsers.includes(userId)){
             onlineUsers.push(userId)
         }
-        socket.emit('online-users', onlineUsers)
+        io.emit('online-users', onlineUsers)
+    })
+    socket.on('user-offline', userId=>{
+        onlineUsers.splice(onlineUsers.indexOf(userId), 1)
+        io.emit('online-users-updated', onlineUsers)
     })
 })
 
