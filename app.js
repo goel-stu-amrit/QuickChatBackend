@@ -13,7 +13,9 @@ app.use(express.json({
 const server = require('http').createServer(app)
 
 const io = require('socket.io')(server,{cors:{
-    origin:'https://quickchatapp-0iba.onrender.com',
+    origin:['http://localhost:3000',
+        process.env.FRONTEND_URL
+    ],
     methods: ['GET', 'POST']
 }})
 
