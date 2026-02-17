@@ -32,6 +32,13 @@ io.on('connection', socket =>{
         socket.join(userId)
     })
 
+    socket.on('start-new-chat', chat=>{
+        io
+        .to(chat.members[0]._id)
+        .to(chat.members[1]._id)
+        .emit('new-chat-started', chat)
+    })
+
     socket.on('send-message', (message)=>{
         io
         .to(message.members[0])
