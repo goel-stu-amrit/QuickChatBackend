@@ -23,6 +23,17 @@ let userSchema = new mongoose.Schema({
     profilePic:{
         type:String,
         required:false
+    },
+    emailVerified:{
+        type:Boolean,
+        default: false
+    },
+    emailOTP : {
+        type: String,
+        select:false
+    },
+    otpExpiresAt:{
+        type: Date
     }
 }, {timestamps:true}) 
 
