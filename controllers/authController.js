@@ -16,11 +16,29 @@ router.post('/signup', async (req, res) =>{
 
         const user = await User.findOne({email: req.body.email})
 
-        if(user){
+        if(user && user.emailVerified){
             return res.send({
-                message: "User Already Exist!!!",
+                message: "User Already Exist!!! Please Login",
                 success:false
             })
+        }
+
+        if(user && !user.emailVerified){
+            const otp = crypto.randomInt(100000, 999999)
+            const hashedOTP = crypto.createHash('sha256').update(otp.toString()).digest("hex")
+
+            user.emailOTP = hashedOTP
+            user.otpExpiresAt = Date.now() + 10 * 60 * 1000
+
+            await user.save()
+
+            await sendOTPEmail(user.email, otp)
+
+            return res.send({
+                message:"OTP resent to your email. Please verify",
+                success:true
+            })
+
         }
         const hashedPassword = await bcrypt.hash(req.body.password, 10)
 
@@ -83,7 +101,7 @@ router.post('/verify-email', async(req, res)=>{
 
         res.send({
             message: "Email Verified Successfully",
-            sucess:true
+            success:true
         })
     }
     catch(error){
