@@ -7,6 +7,7 @@ const sendOTPEmail = require('../utils/sendEmail')
 
 router.post('/signup', async (req, res) =>{
     try{
+        req.body.email = req.body.email?.toLowerCase().trim()
         if (!req.body.password || req.body.password.length < 8) {
             return res.send({
                 message: "Password must be at least 8 characters long",
@@ -24,22 +25,24 @@ router.post('/signup', async (req, res) =>{
         }
 
         if(user && !user.emailVerified){
+
+            const isExpired = !user.otpExpiresAt || user.otpExpiresAt < Date.now()
             const otp = crypto.randomInt(100000, 999999)
             const hashedOTP = crypto.createHash('sha256').update(otp.toString()).digest("hex")
 
             user.emailOTP = hashedOTP
-            user.otpExpiresAt = Date.now() + 10 * 60 * 1000
+            user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
 
             await user.save()
 
             await sendOTPEmail(user.email, otp)
 
             return res.send({
-                message:"OTP resent to your email. Please verify",
+                message: isExpired ? "OTP has expired. New OTP sent to your email " : "A new OTP sent to your email. Please verify",
                 success:true
             })
-
         }
+
         const hashedPassword = await bcrypt.hash(req.body.password, 10)
 
         const otp = crypto.randomInt(100000, 999999)
@@ -51,7 +54,7 @@ router.post('/signup', async (req, res) =>{
             password: hashedPassword,
             emailVerified: false,
             emailOTP: hashedOTP,
-            otpExpiresAt: Date.now() + 10*60*1000
+            otpExpiresAt:  new Date(Date.now() + 10 * 60 * 1000)
         })
 
         await newUser.save()
@@ -73,9 +76,10 @@ router.post('/signup', async (req, res) =>{
 
 router.post('/verify-email', async(req, res)=>{
     try{
+        req.body.email = req.body.email?.toLowerCase().trim()
         const {email, otp} = req.body
 
-        const user= await User.findOne({email}).select('+emailOTP')
+        const user= await User.findOne({email}).select('+emailOTP +otpExpiresAt')
 
         if(!user){
             return res.send({
@@ -114,7 +118,6 @@ router.post('/verify-email', async(req, res)=>{
 
 router.post('/login', async (req, res) =>{
     try{
-
         if (!req.body.email || !req.body.password) {
             return res.send({
                 message: "Email and password are required",
@@ -153,6 +156,87 @@ router.post('/login', async (req, res) =>{
         })
     }catch(error){
         res.send({
+            message: error.message,
+            success:false
+        })
+    }
+})
+
+router.post('/check-otp-status', async(req, res)=>{
+    try{
+        req.body.email = req.body.email?.toLowerCase().trim()
+        const { email} = req.body
+        const user = await User.findOne({email}).select('+otpExpiresAt')
+        if (!user){
+            return res.send({
+                success:false,
+                message:"user not found"
+            })
+        }
+        if (user.emailVerified) {
+            return res.send({
+                success: true,
+                verified: true
+            })
+        }
+
+        const isExpired = !user.otpExpiresAt || user.otpExpiresAt < Date.now()
+
+        return res.send({
+            success:true,
+            verified: false,
+            otpExpired: isExpired,
+            otpExpiresAt: user.otpExpiresAt
+        })
+
+    }catch(error){
+        res.send({
+            message:error.message,
+            success: false
+        })
+    }
+})
+
+router.post('/resend-otp', async (req,res)=>{
+
+    try{
+        
+        req.body.email = req.body.email?.toLowerCase().trim()
+        const {email} = req.body
+
+        const user =await User.findOne({email})
+
+        if(!user){
+            return res.send({
+                message:"User not found",
+                success:false
+            })
+        }
+
+        if(user.emailVerified){
+            return res.send({
+                message:"User already verified",
+                success: false
+            })
+        }
+
+        const otp = crypto.randomInt(100000, 999999)
+
+        const hashedOTP = crypto.createHash("sha256").update(otp.toString()).digest("hex")
+
+        user.emailOTP = hashedOTP
+        user.otpExpiresAt = new Date(Date.now() + 10*60 * 1000)
+
+        await user.save()
+        await sendOTPEmail(user.email, otp)
+
+        res.send({
+            message: "OTP sent successfully",
+            success:true
+        })
+
+    }catch(error){
+        return res.send({
             message: error.message,
             success:false
         })
