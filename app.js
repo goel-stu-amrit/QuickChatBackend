@@ -5,6 +5,9 @@ const authRouter = require('./controllers/authController')
 const userRouter = require('./controllers/userController')
 const chatRouter = require('./controllers/chatController')
 const messageRouter = require('./controllers/messageController')
+const supportRouter = require('./controllers/supportController')
+const agentRouter = require('./controllers/agentController')
+const adminRouter = require('./controllers/adminController')
 
 app.use(cors())
 app.use(express.json({
@@ -19,10 +22,14 @@ const io = require('socket.io')(server,{cors:{
     methods: ['GET', 'POST']
 }})
 
+
 app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/message', messageRouter)
+app.use('/api/support', supportRouter(io))
+app.use('/api/agent', agentRouter(io))
+app.use('/api/admin', adminRouter(io))
 
 const onlineUsers = []
 
@@ -76,5 +83,4 @@ io.on('connection', socket =>{
         io.emit('online-users-updated', onlineUsers)
     })
 })
-
 module.exports = server 

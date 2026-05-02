@@ -19,6 +19,11 @@ let userSchema = new mongoose.Schema({
         select:false,
         minlength: 8
     },
+    role:{
+        type:String,
+        enum:["user", "agent", "admin"],
+        default:"user"
+    },
     profilePic:{
         type:String,
         required:false

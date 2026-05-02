@@ -32,7 +32,6 @@ router.post('/new-message',authMiddleware, async(req,res)=>{
     }
 })
 
-
 router.get('/get-all-messages/:chatId', authMiddleware, async (req, res) =>{
     try{
         const allMessages = await Message.find({chatId: req.params.chatId}).sort({createdAt :1})
