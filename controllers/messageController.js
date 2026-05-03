@@ -9,13 +9,14 @@ router.post('/new-message',authMiddleware, async(req,res)=>{
         const newMessage = new Message(req.body)
         const savedMessage = await newMessage.save()
 
-        //update last message in chat collection
-        const currentChat  = await Chat.findOneAndUpdate({_id:req.body.chatId},
-            {
-                lastMessage:savedMessage._id,
-                $inc : {unreadMessageCount: 1}
-            }
-        )
+        const currentChat  = await Chat.findById(req.body.chatId)
+
+        const reciverId = currentChat.members.find((member)=> member.toString() !== req.userId)
+    
+        await Chat.findByIdAndUpdate(req.body.chatId, {
+            lastMessage : savedMessage._id,
+            ...(reciverId && {$inc : {unreadMessageCount : 1}})
+        })
 
         res.status(201).send({
             message:"Message sent successfully",
