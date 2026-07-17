@@ -25,7 +25,7 @@ router.get('/get-logged-user', authMiddleware , async (req, res)=>{
 router.get('/get-all-users', authMiddleware , async (req, res)=>{
     try{
         let uId = req.userId
-        const allUser = await User.find({ _id : {$ne : uId}})
+        const allUser = await User.find({ _id : {$ne : uId}, emailVerified : true})
 
         res.send({
             message:"All users Fetched successfully",
